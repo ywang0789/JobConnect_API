@@ -21,8 +21,8 @@ builder.Services.AddIdentity<Account, IdentityRole>()
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("RecruiterOnly", policy => policy.RequireRole("Recruiter"));
-    options.AddPolicy("ApplicantOnly", policy => policy.RequireRole("Applicant"));
+    options.AddPolicy("RecruiterOnly", policy => policy.RequireRole("recruiter"));
+    options.AddPolicy("ApplicantOnly", policy => policy.RequireRole("applicant"));
 });
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
