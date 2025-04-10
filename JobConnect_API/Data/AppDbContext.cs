@@ -9,7 +9,7 @@ namespace JobConnect_API.Data
     public class AppDbContext : IdentityDbContext<Account>
     {
         public DbSet<Job> Jobs { get; set; }
-        public DbSet<Application> Applications { get; set; }
+        public DbSet<Models.Application> Applications { get; set; }
 
         public AppDbContext(DbContextOptions options)
             : base(options)
@@ -76,8 +76,8 @@ namespace JobConnect_API.Data
             modelBuilder.Entity<Account>().HasData(recruiter, applicant);
 
             // Seed Applications
-            modelBuilder.Entity<Application>().HasData(
-                new Application
+            modelBuilder.Entity<Models.Application>().HasData(
+                new Models.Application
                 {
                     application_id = 1,
                     job_id = 1,
