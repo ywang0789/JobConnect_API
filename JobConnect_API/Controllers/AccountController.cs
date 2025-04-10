@@ -20,7 +20,7 @@ namespace JobConnect_API.Controllers
         }
 
         /// <summary>
-        /// Register a new user with email and password.
+        /// Register a new account
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
@@ -28,7 +28,8 @@ namespace JobConnect_API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterDto model)
         {
-            var user = new Account
+            // get params from dto
+            var account = new Account
             {
                 UserName = model.Email,
                 Email = model.Email,
@@ -37,21 +38,25 @@ namespace JobConnect_API.Controllers
                 role = model.Role
             };
 
-            var result = await _userManager.CreateAsync(user, model.Password);
+            // create account
+            var result = await _userManager.CreateAsync(account, model.Password);
 
             if (!result.Succeeded)
             {
                 return BadRequest(result.Errors);
             }
 
-            await _userManager.AddToRoleAsync(user, model.Role);
-            await _signInManager.SignInAsync(user, isPersistent: false);
+            // add account to role 
+            await _userManager.AddToRoleAsync(account, model.Role);
 
-            return Ok(new { message = "User registered successfully." });
+            // signin
+            await _signInManager.SignInAsync(account, isPersistent: false);
+
+            return Ok(new { message = "Register success" });
         }
 
         /// <summary>
-        /// Login a user with email and password.
+        /// Login a account with email and password.
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
@@ -59,18 +64,19 @@ namespace JobConnect_API.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto model)
         {
+            // sign in
             var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, isPersistent: false, lockoutOnFailure: false);
 
             if (!result.Succeeded)
             {
-                return Unauthorized("Invalid login attempt.");
+                return Unauthorized("Login fail");
             }
 
-            return Ok(new { message = "Logged in successfully." });
+            return Ok(new { message = "Login success" });
         }
 
         /// <summary>
-        /// Logout the current logged-in user.s
+        /// Logout the current logged-in account.s
         /// </summary>
         /// <returns></returns>
         // POST: api/account/logout
@@ -78,11 +84,11 @@ namespace JobConnect_API.Controllers
         public async Task<IActionResult> Logout()
         {
             await _signInManager.SignOutAsync();
-            return Ok(new { message = "Logged out successfully." });
+            return Ok(new { message = "Logout success" });
         }
 
         /// <summary>
-        /// Delete the current logged-in user's account.
+        /// Delete the current logged-in account's account.
         /// </summary>
         /// <returns></returns>
         // DELETE: api/account/delete
@@ -90,28 +96,35 @@ namespace JobConnect_API.Controllers
         [HttpDelete("delete")]
         public async Task<IActionResult> DeleteAccount()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = await _userManager.FindByIdAsync(userId);
+            // find account
+            var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(accountId))
+            {
+                return BadRequest(new { message = "Account Id is null or empty." });
+            }
+            var user = await _userManager.FindByIdAsync(accountId);
 
             if (user == null)
             {
-                return NotFound();
+                return NotFound(new { message = "Account not found" });
             }
-                
-            await _signInManager.SignOutAsync(); 
 
+            // sign out first
+            await _signInManager.SignOutAsync();
+
+            // del
             var result = await _userManager.DeleteAsync(user);
 
             if (!result.Succeeded)
             {
                 return BadRequest(result.Errors);
             }
-                
-            return Ok(new { message = "Account deleted successfully." });
+
+            return Ok(new { message = $"Account {accountId} deleted successfully." });
         }
 
         /// <summary>
-        /// Get the current logged-in user's details.
+        /// Get the current logged-in account's details.
         /// </summary>
         /// <returns></returns>
         // GET: api/account/me
@@ -119,10 +132,18 @@ namespace JobConnect_API.Controllers
         [HttpGet("me")]
         public async Task<IActionResult> GetCurrentUser()
         {
+            // find account
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return BadRequest(new { message = "Account Id is null or empty." });
+            }
             var user = await _userManager.FindByIdAsync(userId);
 
-            if (user == null) return NotFound();
+            if (user == null)
+            {
+                return NotFound();
+            }
 
             return Ok(new
             {
