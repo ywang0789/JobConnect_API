@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using JobConnect_API.Data;
 using JobConnect_API.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace JobConnect_API.Controllers
 {
@@ -64,6 +65,7 @@ namespace JobConnect_API.Controllers
         /// <returns></returns>
         // PUT: api/Job/5
         [HttpPut("{id}")]
+        [Authorize(Policy = "RecruiterOnly")]
         public async Task<IActionResult> PutJob(int id, Job job)
         {
             if (id != job.job_id)
@@ -99,6 +101,7 @@ namespace JobConnect_API.Controllers
         /// <returns></returns>
         // POST: api/Job
         [HttpPost]
+        [Authorize(Policy = "RecruiterOnly")]
         public async Task<ActionResult<Job>> PostJob(Job job)
         {
             _context.Jobs.Add(job);
@@ -114,6 +117,7 @@ namespace JobConnect_API.Controllers
         /// <returns></returns>
         // DELETE: api/Job/5
         [HttpDelete("{id}")]
+        [Authorize(Policy = "RecruiterOnly")]
         public async Task<IActionResult> DeleteJob(int id)
         {
             var job = await _context.Jobs.FindAsync(id);
