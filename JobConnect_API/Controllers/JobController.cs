@@ -22,6 +22,12 @@ namespace JobConnect_API.Controllers
             _context = context;
         }
 
+
+        /// <summary>
+        /// Helper method to check if a job exists by ID.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         private bool JobExists(int id)
         {
             return _context.Jobs.Any(e => e.job_id == id);
