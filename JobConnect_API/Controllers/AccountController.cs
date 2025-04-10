@@ -102,9 +102,9 @@ namespace JobConnect_API.Controllers
             {
                 return BadRequest(new { message = "Account Id is null or empty." });
             }
-            var user = await _userManager.FindByIdAsync(accountId);
+            var account = await _userManager.FindByIdAsync(accountId);
 
-            if (user == null)
+            if (account == null)
             {
                 return NotFound(new { message = "Account not found" });
             }
@@ -113,14 +113,14 @@ namespace JobConnect_API.Controllers
             await _signInManager.SignOutAsync();
 
             // del
-            var result = await _userManager.DeleteAsync(user);
+            var result = await _userManager.DeleteAsync(account);
 
             if (!result.Succeeded)
             {
                 return BadRequest(result.Errors);
             }
 
-            return Ok(new { message = $"Account {accountId} deleted successfully." });
+            return Ok(new { message = "Delete account success" });
         }
 
         /// <summary>
@@ -130,28 +130,28 @@ namespace JobConnect_API.Controllers
         // GET: api/account/me
         [Authorize]
         [HttpGet("me")]
-        public async Task<IActionResult> GetCurrentUser()
+        public async Task<IActionResult> GetCurrentAccount()
         {
             // find account
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
+            var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(accountId))
             {
                 return BadRequest(new { message = "Account Id is null or empty." });
             }
-            var user = await _userManager.FindByIdAsync(userId);
+            var account = await _userManager.FindByIdAsync(accountId);
 
-            if (user == null)
+            if (account == null)
             {
-                return NotFound();
+                return NotFound(new { message = "Account not found" });
             }
 
             return Ok(new
             {
-                user.Id,
-                user.Email,
-                user.first_name,
-                user.last_name,
-                user.role
+                account.Id,
+                account.Email,
+                account.first_name,
+                account.last_name,
+                account.role
             });
         }
     }

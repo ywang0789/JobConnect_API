@@ -34,16 +34,16 @@ namespace JobConnect_API.Controllers
         }
 
         /// <summary>
-        /// helper method to get the current user's ID.
+        /// helper method to get the current account's ID.
         /// </summary>
         /// <returns></returns>
-        private string? GetCurrentUserId()
+        private string? GetCurrentAccountId()
         {
             return User.FindFirstValue(ClaimTypes.NameIdentifier);
         }
 
         /// <summary>
-        /// Helper method to check if the current user is a recruiter.
+        /// Helper method to check if the current account is a recruiter.
         /// </summary>
         /// <returns></returns>
         private bool IsRecruiter()
@@ -52,7 +52,7 @@ namespace JobConnect_API.Controllers
         }
 
         /// <summary>
-        /// Get all applications belonging to the current user if applicant,
+        /// Get all applications belonging to the current account is applicant,
         /// get all applications if recruiter.
         /// </summary>
         /// <returns></returns>
@@ -61,6 +61,7 @@ namespace JobConnect_API.Controllers
         [Authorize]
         public async Task<ActionResult<IEnumerable<Application>>> GetApplications()
         {
+            // if the account is a recruiter, return all applications
             if (IsRecruiter())
             {
                 return await _context.Applications
@@ -69,9 +70,10 @@ namespace JobConnect_API.Controllers
                     .ToListAsync();
             }
 
-            var userId = GetCurrentUserId();
+            // if the account is an applicant, return only their own applications
+            var accountId = GetCurrentAccountId();
             return await _context.Applications
-                .Where(a => a.account_id == userId)
+                .Where(a => a.account_id == accountId)
                 .Include(a => a.Job)
                 .ToListAsync();
         }
@@ -88,15 +90,18 @@ namespace JobConnect_API.Controllers
         [Authorize]
         public async Task<ActionResult<Application>> GetApplication(int id)
         {
+            // find app
             var application = await _context.Applications
                 .Include(a => a.Job)
                 .Include(a => a.Account)
                 .FirstOrDefaultAsync(a => a.application_id == id);
 
             if (application == null)
-                return NotFound();
+                return NotFound(new { message = "Application not found." });
 
-            if (!IsRecruiter() && application.account_id != GetCurrentUserId())
+            // onyl recruiters can see any application
+            // applicants can only see their own applications
+            if (!IsRecruiter() && application.account_id != GetCurrentAccountId())
                 return Forbid();
 
             return application;
@@ -112,6 +117,7 @@ namespace JobConnect_API.Controllers
         [Authorize(Policy = "RecruiterOnly")]
         public async Task<ActionResult<IEnumerable<Application>>> GetApplicationsByJobId(int jobId)
         {
+            // get applications where job id matzches
             var applications = await _context.Applications
                 .Where(a => a.job_id == jobId)
                 .ToListAsync();
@@ -136,7 +142,7 @@ namespace JobConnect_API.Controllers
         {
             if (id != application.application_id)
             {
-                return BadRequest();
+                return BadRequest(new { message = "Application Id mismatch." });
             }
 
             _context.Entry(application).State = EntityState.Modified;
@@ -149,7 +155,7 @@ namespace JobConnect_API.Controllers
             {
                 if (!ApplicationExists(id))
                 {
-                    return NotFound();
+                    return NotFound(new { message = "Application not found." });
                 }
                 else
                 {
@@ -170,11 +176,16 @@ namespace JobConnect_API.Controllers
         [Authorize(Policy = "ApplicantOnly")]
         public async Task<ActionResult<Application>> PostApplication(int jobId, Application application)
         {
-            var userId = GetCurrentUserId();
-            application.account_id = userId;
+            // get account + job ids (foreign keys)
+            var accountId = GetCurrentAccountId();
+            application.account_id = accountId;
             application.job_id = jobId;
+            application.status = "pending";// default status
+
+            // add
             _context.Applications.Add(application);
             await _context.SaveChangesAsync();
+
             return CreatedAtAction("GetApplication", new { id = application.application_id }, application);
         }
 
@@ -189,19 +200,23 @@ namespace JobConnect_API.Controllers
         [Authorize(Policy = "ApplicantOnly")]
         public async Task<IActionResult> DeleteApplication(int id)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var application = await _context.Applications.FindAsync(id);
+            // get account id from logged in user
+            var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+            // find app selected
+            var application = await _context.Applications.FindAsync(id);
             if (application == null)
             {
-                return NotFound();
+                return NotFound( new { message = "Application not found." });
             }
 
-            if (application.account_id != userId)
+            // only the applicant can delete their own application
+            if (application.account_id != accountId)
             {
                 return Forbid();
             }
 
+            // rm
             _context.Applications.Remove(application);
             await _context.SaveChangesAsync();
 

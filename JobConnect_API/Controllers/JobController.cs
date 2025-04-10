@@ -22,7 +22,6 @@ namespace JobConnect_API.Controllers
             _context = context;
         }
 
-
         /// <summary>
         /// Helper method to check if a job exists by ID.
         /// </summary>
@@ -57,7 +56,7 @@ namespace JobConnect_API.Controllers
 
             if (job == null)
             {
-                return NotFound();
+                return NotFound(new { message = "Job not found" });
             }
 
             return job;
@@ -65,6 +64,7 @@ namespace JobConnect_API.Controllers
 
         /// <summary>
         /// Update a job by ID.
+        /// only recruiters can update jobs
         /// </summary>
         /// <param name="id"></param>
         /// <param name="job"></param>
@@ -76,7 +76,7 @@ namespace JobConnect_API.Controllers
         {
             if (id != job.job_id)
             {
-                return BadRequest();
+                return BadRequest(new { message = "Job Id mismatch" });
             }
 
             _context.Entry(job).State = EntityState.Modified;
@@ -89,7 +89,7 @@ namespace JobConnect_API.Controllers
             {
                 if (!JobExists(id))
                 {
-                    return NotFound();
+                    return NotFound(new { message = "Job not found" });
                 }
                 else
                 {
@@ -129,7 +129,7 @@ namespace JobConnect_API.Controllers
             var job = await _context.Jobs.FindAsync(id);
             if (job == null)
             {
-                return NotFound();
+                return NotFound(new { message = "Job not found" });
             }
 
             _context.Jobs.Remove(job);
