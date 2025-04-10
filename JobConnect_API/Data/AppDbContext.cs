@@ -39,53 +39,62 @@ namespace JobConnect_API.Data
                     location = "San Francisco"
                 }
             );
+        }
 
-            // Seed Accounts
-            var hasher = new PasswordHasher<Account>();
+        public static async Task CreateTestUsers(IServiceProvider serviceProvider)
+        {
+            var userManager = serviceProvider.GetRequiredService<UserManager<Account>>();
+            var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
+            // Ensure roles exist
+            string[] roles = { "recruiter", "applicant" };
+            foreach (var role in roles)
+            {
+                if (!await roleManager.RoleExistsAsync(role))
+                {
+                    await roleManager.CreateAsync(new IdentityRole(role));
+                }
+            }
+
+            // Recruiter account
             var recruiter = new Account
             {
-                Id = Guid.NewGuid().ToString(),
-                UserName = "recruiter@example.com",
-                NormalizedUserName = "RECRUITER@EXAMPLE.COM",
-                Email = "recruiter@example.com",
-                NormalizedEmail = "RECRUITER@EXAMPLE.COM",
+                UserName = "recruiter@test.com",
+                Email = "recruiter@test.com",
                 first_name = "John",
                 last_name = "Doe",
                 role = "recruiter",
-                EmailConfirmed = true,
-                SecurityStamp = Guid.NewGuid().ToString()
+                EmailConfirmed = true
             };
-            recruiter.PasswordHash = hasher.HashPassword(recruiter, "Recruiter123!");
 
+            if (await userManager.FindByEmailAsync(recruiter.Email) == null)
+            {
+                var result = await userManager.CreateAsync(recruiter, "Recruiter123!");
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(recruiter, "recruiter");
+                }
+            }
+
+            // Applicant account
             var applicant = new Account
             {
-                Id = Guid.NewGuid().ToString(),
-                UserName = "applicant@example.com",
-                NormalizedUserName = "APPLICANT@EXAMPLE.COM",
-                Email = "applicant@example.com",
-                NormalizedEmail = "APPLICANT@EXAMPLE.COM",
+                UserName = "applicant@test.com",
+                Email = "applicant@test.com",
                 first_name = "Jane",
                 last_name = "Smith",
                 role = "applicant",
-                EmailConfirmed = true,
-                SecurityStamp = Guid.NewGuid().ToString()
+                EmailConfirmed = true
             };
-            applicant.PasswordHash = hasher.HashPassword(applicant, "Applicant123!");
 
-            modelBuilder.Entity<Account>().HasData(recruiter, applicant);
-
-            // Seed Applications
-            modelBuilder.Entity<Models.Application>().HasData(
-                new Models.Application
+            if (await userManager.FindByEmailAsync(applicant.Email) == null)
+            {
+                var result = await userManager.CreateAsync(applicant, "Applicant123!");
+                if (result.Succeeded)
                 {
-                    application_id = 1,
-                    job_id = 1,
-                    account_id = applicant.Id,
-                    content = "Hire me plz :pray:",
-                    status = "Pending"
+                    await userManager.AddToRoleAsync(applicant, "applicant");
                 }
-            );
+            }
         }
 
     }
