@@ -1,0 +1,5 @@
+root = true
+
+# Apply only to C# files in the Migrations folder
+[JobConnect_API/Migrations/*.cs]
+dotnet_diagnostic.IDE1006.severity = none
