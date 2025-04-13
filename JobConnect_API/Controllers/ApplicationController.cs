@@ -109,23 +109,31 @@ namespace JobConnect_API.Controllers
 
         /// <summary>
         /// Get all applications for a specific job by job ID.
+        /// if the user is a recuiter, return all applications for the job.
+        /// if the user is a applicant, return only their own applications for the job.
         /// </summary>
         /// <param name="jobId"></param>
         /// <returns></returns>
         // GET: api/Application/job/{jobId}
         [HttpGet("job/{jobId}")]
-        [Authorize(Policy = "RecruiterOnly")]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<Application>>> GetApplicationsByJobId(int jobId)
         {
-            // get applications where job id matzches
-            var applications = await _context.Applications
-                .Where(a => a.job_id == jobId)
-                .ToListAsync();
-            if (applications == null || applications.Count == 0)
+            // if the account is a recruiter, return all applications for the job
+            if (IsRecruiter())
             {
-                return NotFound();
+                return await _context.Applications
+                    .Where(a => a.job_id == jobId)
+                    .Include(a => a.Job)
+                    .Include(a => a.Account)
+                    .ToListAsync();
             }
-            return applications;
+            // if the account is an applicant, return only their own applications for the job
+            var accountId = GetCurrentAccountId();
+            return await _context.Applications
+                .Where(a => a.job_id == jobId && a.account_id == accountId)
+                .Include(a => a.Job)
+                .ToListAsync();
         }
 
         /// <summary>
